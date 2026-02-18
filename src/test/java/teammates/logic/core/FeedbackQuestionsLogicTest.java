@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.annotations.AfterClass;
 
 import teammates.common.datatransfer.AttributesDeletionQuery;
 import teammates.common.datatransfer.CourseRoster;
@@ -49,6 +50,11 @@ public class FeedbackQuestionsLogicTest extends BaseLogicTest {
     public void beforeMethod() {
         dataBundle = getTypicalDataBundle();
         removeAndRestoreTypicalDataBundle();
+    }
+
+    @AfterClass
+    public void printDiyBranchCoverageReport() {
+        FeedbackQuestionsLogic.printManual_populateFieldsToGenerateInQuestion_CoverageReport();
     }
 
     @Test
