@@ -559,6 +559,35 @@ public class EmailGeneratorTest extends BaseLogicTest {
     }
 
     @Test
+    public void testGenerateFeedbackSessionSummaryOfCourse_sessionNotOpenedYet() throws Exception {
+        FeedbackSessionAttributes session =
+                fsLogic.getFeedbackSession("Feedback session with no emails sent", "idOfTestingNoEmailsSentCourse");
+        fsLogic.updateFeedbackSession(
+                FeedbackSessionAttributes.updateOptionsBuilder(session.getFeedbackSessionName(), session.getCourseId())
+                        .withStartTime(TimeHelper.getInstantDaysOffsetFromNow(2))
+                        .withEndTime(TimeHelper.getInstantDaysOffsetFromNow(3))
+                        .withSentOpenedEmail(true)
+                        .build());
+
+        CourseAttributes course = coursesLogic.getCourse(session.getCourseId());
+        StudentAttributes student = studentsLogic.getStudentForEmail(course.getId(), "student1@noemailssent.tmt");
+
+        EmailWrapper email = emailGenerator.generateFeedbackSessionSummaryOfCourse(
+                session.getCourseId(), student.getEmail(), EmailType.STUDENT_COURSE_LINKS_REGENERATED);
+
+        assertTrue(email.getContent().contains("(Feedback session is not yet opened)"));
+    }
+
+    @Test
+    public void testGenerateFeedbackSessionSummaryOfCourse_invalidEmailType() {
+        StudentAttributes student = studentsLogic.getStudentForEmail("idOfTestingNoEmailsSentCourse", "student1@noemailssent.tmt");
+
+        ______TS("email type is invalid");
+        assertThrows(AssertionError.class, () -> emailGenerator.generateFeedbackSessionSummaryOfCourse(
+                "idOfTestingNoEmailsSentCourse", student.getEmail(), EmailType.FEEDBACK_OPENED));
+    }
+
+    @Test
     public void testGenerateInstructorJoinEmail_testSanitization() throws Exception {
         ______TS("instructor new account email: sanitization required");
         InstructorAttributes instructor1 =
