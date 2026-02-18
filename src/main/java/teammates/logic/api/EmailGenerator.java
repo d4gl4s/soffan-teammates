@@ -18,6 +18,7 @@ import teammates.common.util.Config;
 import teammates.common.util.Const;
 import teammates.common.util.EmailType;
 import teammates.common.util.EmailWrapper;
+import teammates.common.util.Logger;
 import teammates.common.util.RequestTracer;
 import teammates.common.util.SanitizationHelper;
 import teammates.common.util.Templates;
@@ -251,8 +252,10 @@ public final class EmailGenerator {
         StudentAttributes student = null;
         InstructorAttributes instructor = null;
         if (isInstructor) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(1);
             instructor = instructorsLogic.getInstructorForEmail(courseId, userEmail);
         } else {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(2);
             student = studentsLogic.getStudentForEmail(courseId, userEmail);
         }
 
@@ -261,7 +264,10 @@ public final class EmailGenerator {
 
         for (FeedbackSessionAttributes fsa : fsInCourse) {
             if (fsa.isSentOpenedEmail() || fsa.isSentPublishedEmail()) {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(3);
                 sessions.add(fsa);
+            } else {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(4);
             }
         }
 
@@ -269,19 +275,36 @@ public final class EmailGenerator {
         String joinUrl = Config.getFrontEndAppUrl(
                 isInstructor ? instructor.getRegistrationUrl() : student.getRegistrationUrl()).toAbsoluteString();
         boolean isYetToJoinCourse = isInstructor ? isYetToJoinCourse(instructor) : isYetToJoinCourse(student);
-        String joinFragmentTemplate = isInstructor
-                ? EmailTemplates.FRAGMENT_INSTRUCTOR_COURSE_REJOIN_AFTER_REGKEY_RESET
-                : emailType == EmailType.STUDENT_EMAIL_CHANGED
-                        ? EmailTemplates.FRAGMENT_STUDENT_COURSE_JOIN
-                        : EmailTemplates.FRAGMENT_STUDENT_COURSE_REJOIN_AFTER_REGKEY_RESET;
+        String joinFragmentTemplate;
+        if (isInstructor) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(5);
+            joinFragmentTemplate = EmailTemplates.FRAGMENT_INSTRUCTOR_COURSE_REJOIN_AFTER_REGKEY_RESET;
+        } else if (emailType == EmailType.STUDENT_EMAIL_CHANGED) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(6);
+            joinFragmentTemplate = EmailTemplates.FRAGMENT_STUDENT_COURSE_JOIN;
+        } else {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(7);
+            joinFragmentTemplate = EmailTemplates.FRAGMENT_STUDENT_COURSE_REJOIN_AFTER_REGKEY_RESET;
+        }
 
-        String joinFragmentValue = isYetToJoinCourse
-                ? Templates.populateTemplate(joinFragmentTemplate,
-                        "${joinUrl}", joinUrl,
-                        "${courseName}", SanitizationHelper.sanitizeForHtml(course.getName()),
-                        "${coOwnersEmails}", generateCoOwnersEmailsLine(course.getId()),
-                        "${supportEmail}", Config.SUPPORT_EMAIL)
-                : "";
+        String joinFragmentValue;
+        if (isYetToJoinCourse) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(8);
+            joinFragmentValue = Templates.populateTemplate(joinFragmentTemplate,
+                    "${joinUrl}", joinUrl,
+                    "${courseName}", SanitizationHelper.sanitizeForHtml(course.getName()),
+                    "${coOwnersEmails}", generateCoOwnersEmailsLine(course.getId()),
+                    "${supportEmail}", Config.SUPPORT_EMAIL);
+        } else {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(9);
+            joinFragmentValue = "";
+        }
+
+        if (sessions.isEmpty()) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(11);
+        } else {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(10);
+        }
 
         for (FeedbackSessionAttributes fsa : sessions) {
             String submitUrlHtml = "(Feedback session is not yet opened)";
@@ -290,6 +313,7 @@ public final class EmailGenerator {
             String userKey = isInstructor ? instructor.getKey() : student.getKey();
 
             if (fsa.isOpened() || fsa.isClosed()) {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(12);
                 String submitUrl = Config.getFrontEndAppUrl(Const.WebPageURIs.SESSION_SUBMISSION_PAGE)
                         .withCourseId(course.getId())
                         .withSessionName(fsa.getFeedbackSessionName())
@@ -297,9 +321,12 @@ public final class EmailGenerator {
                         .withEntityType(isInstructor ? Const.EntityType.INSTRUCTOR : "")
                         .toAbsoluteString();
                 submitUrlHtml = "<a href=\"" + submitUrl + "\">" + submitUrl + "</a>";
+            } else {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(13);
             }
 
             if (fsa.isPublished()) {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(14);
                 String reportUrl = Config.getFrontEndAppUrl(Const.WebPageURIs.SESSION_RESULTS_PAGE)
                         .withCourseId(course.getId())
                         .withSessionName(fsa.getFeedbackSessionName())
@@ -307,6 +334,8 @@ public final class EmailGenerator {
                         .withEntityType(isInstructor ? Const.EntityType.INSTRUCTOR : "")
                         .toAbsoluteString();
                 reportUrlHtml = "<a href=\"" + reportUrl + "\">" + reportUrl + "</a>";
+            } else {
+                ManualFeedbackSessionSummaryBranchCoverage.mark(15);
             }
 
             Instant endTime = TimeHelper.getMidnightAdjustedInstantBasedOnZone(
@@ -321,7 +350,10 @@ public final class EmailGenerator {
         }
 
         if (linksFragmentValue.length() == 0) {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(16);
             linksFragmentValue.append("No links found.");
+        } else {
+            ManualFeedbackSessionSummaryBranchCoverage.mark(17);
         }
 
         String additionalContactInformation = getAdditionalContactInformationFragment(course, isInstructor);
@@ -344,6 +376,10 @@ public final class EmailGenerator {
         email.setType(emailType);
         email.setSubjectFromType(course.getName(), course.getId());
         return email;
+    }
+
+    static void printManualFeedbackSessionSummaryCoverageReport() {
+        ManualFeedbackSessionSummaryBranchCoverage.printSummary();
     }
 
     /**
@@ -1092,5 +1128,36 @@ public final class EmailGenerator {
                 "${particulars}", particulars,
                 "${coOwnersEmails}", generateCoOwnersEmailsLine(course.getId()),
                 "${supportEmail}", Config.SUPPORT_EMAIL);
+    }
+
+    private static final class ManualFeedbackSessionSummaryBranchCoverage {
+        private static final Logger log = Logger.getLogger();
+        private static final int TOTAL_BRANCHES = 17;
+        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
+
+        private static synchronized void mark(int branchId) {
+            COVERED[branchId] = true;
+        }
+
+        private static synchronized void printSummary() {
+            int coveredCount = 0;
+            StringBuilder coveredBranchIds = new StringBuilder();
+            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
+                if (!COVERED[i]) {
+                    continue;
+                }
+                coveredCount++;
+                if (coveredBranchIds.length() > 0) {
+                    coveredBranchIds.append(", ");
+                }
+                coveredBranchIds.append(i);
+            }
+
+            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+            log.info("DIY coverage: "
+                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
+                    + "Covered IDs: [" + coveredBranchIds + "]");
+        }
     }
 }
