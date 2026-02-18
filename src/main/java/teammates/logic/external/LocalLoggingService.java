@@ -28,6 +28,7 @@ import teammates.common.datatransfer.logs.RequestLogDetails;
 import teammates.common.datatransfer.logs.RequestLogUser;
 import teammates.common.util.FileHelper;
 import teammates.common.util.JsonUtils;
+import teammates.common.util.Logger;
 
 /**
  * Holds functions for operations related to logs reading/writing in local dev environment.
@@ -151,53 +152,83 @@ public class LocalLoggingService implements LogService {
             String latencyFilter, String statusFilter, String regkeyFilter, String emailFilter, String googleIdFilter) {
         if (actionClassFilter == null && latencyFilter == null && statusFilter == null
                 && regkeyFilter == null && emailFilter == null && googleIdFilter == null) {
+            ManualBranchCoverage.mark(1);
             return true;
+        } else {
+            ManualBranchCoverage.mark(2);
         }
         if (details.getEvent() != LogEvent.REQUEST_LOG) {
+            ManualBranchCoverage.mark(3);
             return false;
+        } else {
+            ManualBranchCoverage.mark(4);
         }
         RequestLogDetails requestDetails = (RequestLogDetails) details;
         if (actionClassFilter != null && !actionClassFilter.equals(requestDetails.getActionClass())) {
+            ManualBranchCoverage.mark(5);
             return false;
+        } else {
+            ManualBranchCoverage.mark(6);
         }
         if (statusFilter != null && !statusFilter.equals(String.valueOf(requestDetails.getResponseStatus()))) {
+            ManualBranchCoverage.mark(7);
             return false;
+        } else {
+            ManualBranchCoverage.mark(8);
         }
         if (latencyFilter != null) {
+            ManualBranchCoverage.mark(9);
             Pattern p = Pattern.compile("^(>|>=|<|<=) *(\\d+)$");
             Matcher m = p.matcher(latencyFilter);
             long logLatency = ((RequestLogDetails) details).getResponseTime();
             boolean isFilterSatisfied = false;
             if (m.matches()) {
+                ManualBranchCoverage.mark(10);
                 int time = Integer.parseInt(m.group(2));
                 switch (m.group(1)) {
                 case ">":
+                    ManualBranchCoverage.mark(11);
                     isFilterSatisfied = logLatency > time;
                     break;
                 case ">=":
+                    ManualBranchCoverage.mark(12);
                     isFilterSatisfied = logLatency >= time;
                     break;
                 case "<":
+                    ManualBranchCoverage.mark(13);
                     isFilterSatisfied = logLatency < time;
                     break;
                 case "<=":
+                    ManualBranchCoverage.mark(14);
                     isFilterSatisfied = logLatency <= time;
                     break;
                 default:
+                    ManualBranchCoverage.mark(15);
                     assert false : "Unreachable case";
                     break;
                 }
             }
             if (!isFilterSatisfied) {
+                ManualBranchCoverage.mark(16);
                 return false;
+            } else {
+                ManualBranchCoverage.mark(17);
             }
+        } else {
+            ManualBranchCoverage.mark(18);
         }
         RequestLogUser userInfo = requestDetails.getUserInfo();
         if (regkeyFilter != null && (userInfo == null || !regkeyFilter.equals(userInfo.getRegkey()))) {
+            ManualBranchCoverage.mark(19);
             return false;
+        } else {
+            ManualBranchCoverage.mark(20);
         }
         if (emailFilter != null && (userInfo == null || !emailFilter.equals(userInfo.getEmail()))) {
+            ManualBranchCoverage.mark(21);
             return false;
+        } else {
+            ManualBranchCoverage.mark(22);
         }
         return googleIdFilter == null || userInfo != null && googleIdFilter.equals(userInfo.getGoogleId());
     }
@@ -242,5 +273,40 @@ public class LocalLoggingService implements LogService {
         }
 
         return result;
+    }
+
+    static void printManualCoverageReport() {
+        ManualBranchCoverage.printSummary();
+    }
+
+    private static final class ManualBranchCoverage {
+        private static final Logger log = Logger.getLogger();
+        private static final int TOTAL_BRANCHES = 17;
+        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
+
+        private static synchronized void mark(int branchId) {
+            COVERED[branchId] = true;
+        }
+
+        private static synchronized void printSummary() {
+            int coveredCount = 0;
+            StringBuilder coveredBranchIds = new StringBuilder();
+            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
+                if (!COVERED[i]) {
+                    continue;
+                }
+                coveredCount++;
+                if (coveredBranchIds.length() > 0) {
+                    coveredBranchIds.append(", ");
+                }
+                coveredBranchIds.append(i);
+            }
+
+            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+            log.info("DIY coverage: "
+                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
+                    + "Covered IDs: [" + coveredBranchIds + "]");
+        }
     }
 }
