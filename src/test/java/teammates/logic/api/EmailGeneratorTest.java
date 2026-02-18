@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import teammates.common.datatransfer.ErrorLogEntry;
@@ -39,6 +40,11 @@ public class EmailGeneratorTest extends BaseLogicTest {
     private final StudentsLogic studentsLogic = StudentsLogic.inst();
 
     private final EmailGenerator emailGenerator = EmailGenerator.inst();
+
+    @AfterClass
+    public void printDiyBranchCoverageReport() {
+        EmailGenerator.printManualFeedbackSessionSummaryCoverageReport();
+    }
 
     @Override
     public void prepareTestData() {
