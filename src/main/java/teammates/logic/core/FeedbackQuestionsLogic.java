@@ -573,41 +573,52 @@ public final class FeedbackQuestionsLogic {
         FeedbackParticipantType generateOptionsFor;
 
         if (feedbackQuestionAttributes.getQuestionType() == FeedbackQuestionType.MCQ) {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(1);
             FeedbackMcqQuestionDetails feedbackMcqQuestionDetails =
                     (FeedbackMcqQuestionDetails) feedbackQuestionAttributes.getQuestionDetailsCopy();
             optionList = feedbackMcqQuestionDetails.getMcqChoices();
             generateOptionsFor = feedbackMcqQuestionDetails.getGenerateOptionsFor();
         } else if (feedbackQuestionAttributes.getQuestionType() == FeedbackQuestionType.MSQ) {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(2);
             FeedbackMsqQuestionDetails feedbackMsqQuestionDetails =
                     (FeedbackMsqQuestionDetails) feedbackQuestionAttributes.getQuestionDetailsCopy();
             optionList = feedbackMsqQuestionDetails.getMsqChoices();
             generateOptionsFor = feedbackMsqQuestionDetails.getGenerateOptionsFor();
         } else {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(3);
             // other question types
             return;
         }
 
         switch (generateOptionsFor) {
         case NONE:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(4);
             break;
         case STUDENTS:
         case STUDENTS_IN_SAME_SECTION:
         case STUDENTS_EXCLUDING_SELF:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(5);
             List<StudentAttributes> studentList;
             if (generateOptionsFor == FeedbackParticipantType.STUDENTS_IN_SAME_SECTION) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(6);
                 String courseId = feedbackQuestionAttributes.getCourseId();
                 StudentAttributes studentAttributes =
                         studentsLogic.getStudentForEmail(courseId, emailOfEntityDoingQuestion);
                 studentList = studentsLogic.getStudentsForSection(studentAttributes.getSection(), courseId);
             } else {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(7);
                 studentList = studentsLogic.getStudentsForCourse(feedbackQuestionAttributes.getCourseId());
             }
 
             if (generateOptionsFor == FeedbackParticipantType.STUDENTS_EXCLUDING_SELF) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(8);
                 studentList.removeIf(studentInList -> studentInList.getEmail().equals(emailOfEntityDoingQuestion));
+            } else {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(9);
             }
 
             for (StudentAttributes student : studentList) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(10);
                 optionList.add(student.getName() + " (" + student.getTeam() + ")");
             }
 
@@ -616,71 +627,131 @@ public final class FeedbackQuestionsLogic {
         case TEAMS:
         case TEAMS_IN_SAME_SECTION:
         case TEAMS_EXCLUDING_SELF:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(11);
             try {
                 List<String> teams;
                 if (generateOptionsFor == FeedbackParticipantType.TEAMS_IN_SAME_SECTION) {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(12);
                     String courseId = feedbackQuestionAttributes.getCourseId();
                     StudentAttributes studentAttributes =
                             studentsLogic.getStudentForEmail(courseId, emailOfEntityDoingQuestion);
                     teams = coursesLogic.getTeamsForSection(studentAttributes.getSection(), courseId);
                 } else {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(13);
                     teams = coursesLogic.getTeamsForCourse(feedbackQuestionAttributes.getCourseId());
                 }
 
                 if (generateOptionsFor == FeedbackParticipantType.TEAMS_EXCLUDING_SELF) {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(14);
                     teams.removeIf(team -> team.equals(teamOfEntityDoingQuestion));
+                } else {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(15);
                 }
 
                 for (String team : teams) {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(16);
                     optionList.add(team);
                 }
 
                 optionList.sort(null);
             } catch (EntityDoesNotExistException e) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(17);
                 assert false : "Course disappeared";
             }
             break;
         case OWN_TEAM_MEMBERS_INCLUDING_SELF:
         case OWN_TEAM_MEMBERS:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(18);
             if (teamOfEntityDoingQuestion != null) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(19);
                 List<StudentAttributes> teamMembers = studentsLogic.getStudentsForTeam(teamOfEntityDoingQuestion,
                         feedbackQuestionAttributes.getCourseId());
 
                 if (generateOptionsFor == FeedbackParticipantType.OWN_TEAM_MEMBERS) {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(20);
                     teamMembers.removeIf(teamMember -> teamMember.getEmail().equals(emailOfEntityDoingQuestion));
+                } else {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(21);
                 }
 
-                teamMembers.forEach(teamMember -> optionList.add(teamMember.getName()));
+                teamMembers.forEach(teamMember -> {
+                    Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(22);
+                    optionList.add(teamMember.getName());
+                });
 
                 optionList.sort(null);
+            } else {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(23);
             }
             break;
         case INSTRUCTORS:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(24);
             List<InstructorAttributes> instructorList =
                     instructorsLogic.getInstructorsForCourse(feedbackQuestionAttributes.getCourseId());
 
             for (InstructorAttributes instructor : instructorList) {
+                Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(25);
                 optionList.add(instructor.getName());
             }
 
             optionList.sort(null);
             break;
         default:
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(26);
             assert false : "Trying to generate options for neither students, teams nor instructors";
             break;
         }
 
         if (feedbackQuestionAttributes.getQuestionType() == FeedbackQuestionType.MCQ) {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(27);
             FeedbackMcqQuestionDetails feedbackMcqQuestionDetails =
                     (FeedbackMcqQuestionDetails) feedbackQuestionAttributes.getQuestionDetailsCopy();
             feedbackMcqQuestionDetails.setMcqChoices(optionList);
             feedbackQuestionAttributes.setQuestionDetails(feedbackMcqQuestionDetails);
         } else if (feedbackQuestionAttributes.getQuestionType() == FeedbackQuestionType.MSQ) {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(28);
             FeedbackMsqQuestionDetails feedbackMsqQuestionDetails =
                     (FeedbackMsqQuestionDetails) feedbackQuestionAttributes.getQuestionDetailsCopy();
             feedbackMsqQuestionDetails.setMsqChoices(optionList);
             feedbackQuestionAttributes.setQuestionDetails(feedbackMsqQuestionDetails);
+        } else {
+            Manual_populateFieldsToGenerateInQuestion_BranchCoverage.mark(29);
         }
+    }
+
+    private static final class Manual_populateFieldsToGenerateInQuestion_BranchCoverage {
+        private static final Logger log = Logger.getLogger();
+        private static final int TOTAL_BRANCHES = 29;
+        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
+
+        private static void mark(int branchId) {
+            COVERED[branchId] = true;
+        }
+
+        private static void printSummary() {
+            int coveredCount = 0;
+            StringBuilder coveredBranchIds = new StringBuilder();
+            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
+                if (!COVERED[i]) {
+                    continue;
+                }
+                coveredCount++;
+                if (coveredBranchIds.length() > 0) {
+                    coveredBranchIds.append(", ");
+                }
+                coveredBranchIds.append(i);
+            }
+
+            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+            log.info("DIY coverage: "
+                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
+                    + "Covered IDs: [" + coveredBranchIds + "]");
+        }
+    }
+
+    public static void printManual_populateFieldsToGenerateInQuestion_CoverageReport() {
+        Manual_populateFieldsToGenerateInQuestion_BranchCoverage.printSummary();
     }
 
     /**
