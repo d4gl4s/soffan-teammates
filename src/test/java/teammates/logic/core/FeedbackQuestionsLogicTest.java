@@ -581,205 +581,223 @@ public class FeedbackQuestionsLogicTest extends BaseLogicTest {
         assertNotNull(getQuestionFromDatabase("qn1InSession4InCourse1"));
     }
 
+    // Helper method to set up a standard MCQ Question with a specific GenerateOptionsFor type.
+    private FeedbackQuestionAttributes createMcqQuestionWithGenerateOptions(FeedbackParticipantType type, List<String> initialChoices) {
+        FeedbackQuestionAttributes baseFqa = dataBundle.feedbackQuestions.get("qn1InSession1InCourse1");
+        
+        FeedbackQuestionAttributes fqa = FeedbackQuestionAttributes.builder()
+                .withCourseId(baseFqa.getCourseId())
+                .withFeedbackSessionName(baseFqa.getFeedbackSessionName())
+                .withNumberOfEntitiesToGiveFeedbackTo(2)
+                .withQuestionDescription("test")
+                .withQuestionNumber(baseFqa.getQuestionNumber())
+                .withGiverType(FeedbackParticipantType.STUDENTS)
+                .withRecipientType(FeedbackParticipantType.STUDENTS)
+                .withQuestionDetails(new FeedbackMcqQuestionDetails())
+                .withShowResponsesTo(new ArrayList<>())
+                .withShowGiverNameTo(new ArrayList<>())
+                .withShowRecipientNameTo(new ArrayList<>())
+                .build();
+
+        FeedbackMcqQuestionDetails details = new FeedbackMcqQuestionDetails();
+        details.setMcqChoices(new ArrayList<>(initialChoices));
+        details.setGenerateOptionsFor(type);
+        fqa.setQuestionDetails(details);
+        
+        return fqa;
+    }
+
+    // Helper method to quickly extract the generated MCQ choices for assertions.
+    private List<String> getGeneratedChoices(FeedbackQuestionAttributes fqa) {
+        return ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices();
+    }
+
     @Test
-    public void testPopulateFieldsToGenerateInQuestion_mcqQuestionDifferentGenerateOptions_shouldPopulateCorrectly() {
+    public void testPopulateFields_mcqGenerateNone_shouldKeepExistingChoices() {
         StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
         InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
-
-        FeedbackQuestionAttributes fqa = dataBundle.feedbackQuestions.get("qn1InSession1InCourse1");
-        // construct a typical question
-        fqa = FeedbackQuestionAttributes.builder()
-                        .withCourseId(fqa.getCourseId())
-                        .withFeedbackSessionName(fqa.getFeedbackSessionName())
-                        .withNumberOfEntitiesToGiveFeedbackTo(2)
-                        .withQuestionDescription("test")
-                        .withQuestionNumber(fqa.getQuestionNumber())
-                        .withGiverType(FeedbackParticipantType.STUDENTS)
-                        .withRecipientType(FeedbackParticipantType.STUDENTS)
-                        .withQuestionDetails(new FeedbackMcqQuestionDetails())
-                        .withShowResponsesTo(new ArrayList<>())
-                        .withShowGiverNameTo(new ArrayList<>())
-                        .withShowRecipientNameTo(new ArrayList<>())
-                        .build();
-
-        FeedbackMcqQuestionDetails feedbackMcqQuestionDetails = new FeedbackMcqQuestionDetails();
-
-        // NONE
         List<String> expected = Arrays.asList("test");
 
-        feedbackMcqQuestionDetails.setMcqChoices(Arrays.asList("test"));
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.NONE);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.NONE, expected);
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(expected, getGeneratedChoices(fqaStudent));
 
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+        // Test Instructor
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.NONE, expected);
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(expected, getGeneratedChoices(fqaInstructor));
+    }
 
-        feedbackMcqQuestionDetails.setMcqChoices(Arrays.asList("test"));
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.NONE);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        // STUDENTS
-        expected = Arrays.asList("student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
-                        "student2 In Course1 (Team 1.1</td></div>'\")",
-                        "student3 In Course1 (Team 1.1</td></div>'\")",
-                        "student4 In Course1 (Team 1.1</td></div>'\")",
-                        "student5 In Course1 (Team 1.2)");
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.STUDENTS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.STUDENTS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        // STUDENTS_IN_SAME_SECTION
-        expected = Arrays.asList("student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
-                        "student2 In Course1 (Team 1.1</td></div>'\")",
-                        "student3 In Course1 (Team 1.1</td></div>'\")",
-                        "student4 In Course1 (Team 1.1</td></div>'\")");
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.STUDENTS_IN_SAME_SECTION);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        // STUDENTS_EXCLUDING_SELF
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.STUDENTS_EXCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(Arrays.asList("student2 In Course1 (Team 1.1</td></div>'\")",
-                "student3 In Course1 (Team 1.1</td></div>'\")",
-                "student4 In Course1 (Team 1.1</td></div>'\")",
-                "student5 In Course1 (Team 1.2)"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.STUDENTS_EXCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(Arrays.asList("student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
+    @Test
+    public void testPopulateFields_mcqGenerateStudents_shouldPopulateAllStudents() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+        List<String> expected = Arrays.asList(
+                "student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
                 "student2 In Course1 (Team 1.1</td></div>'\")",
                 "student3 In Course1 (Team 1.1</td></div>'\")",
                 "student4 In Course1 (Team 1.1</td></div>'\")",
-                "student5 In Course1 (Team 1.2)"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+                "student5 In Course1 (Team 1.2)");
 
-        // TEAM MEMBERS
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.OWN_TEAM_MEMBERS_INCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.STUDENTS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(expected, getGeneratedChoices(fqaStudent));
 
+        // Test Instructor
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.STUDENTS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(expected, getGeneratedChoices(fqaInstructor));
+    }
+
+    @Test
+    public void testPopulateFields_mcqGenerateStudentsInSameSection_shouldPopulateCorrectly() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        List<String> expected = Arrays.asList(
+                "student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
+                "student2 In Course1 (Team 1.1</td></div>'\")",
+                "student3 In Course1 (Team 1.1</td></div>'\")",
+                "student4 In Course1 (Team 1.1</td></div>'\")");
+
+        // Test Student Only
+        FeedbackQuestionAttributes fqa = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.STUDENTS_IN_SAME_SECTION, new ArrayList<>());
         fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(Arrays.asList("student1 In Course1</td></div>'\"",
+        assertEquals(expected, getGeneratedChoices(fqa));
+    }
+
+    @Test
+    public void testPopulateFields_mcqGenerateStudentsExcludingSelf_shouldFilterOutUser() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+
+        // Test Student (Self should be excluded)
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.STUDENTS_EXCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(Arrays.asList(
+                "student2 In Course1 (Team 1.1</td></div>'\")",
+                "student3 In Course1 (Team 1.1</td></div>'\")",
+                "student4 In Course1 (Team 1.1</td></div>'\")",
+                "student5 In Course1 (Team 1.2)"), 
+                getGeneratedChoices(fqaStudent));
+
+        // Test Instructor (No student matches instructor email, so all included)
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.STUDENTS_EXCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(Arrays.asList(
+                "student1 In Course1</td></div>'\" (Team 1.1</td></div>'\")",
+                "student2 In Course1 (Team 1.1</td></div>'\")",
+                "student3 In Course1 (Team 1.1</td></div>'\")",
+                "student4 In Course1 (Team 1.1</td></div>'\")",
+                "student5 In Course1 (Team 1.2)"), 
+                getGeneratedChoices(fqaInstructor));
+    }
+
+    @Test
+    public void testPopulateFields_mcqGenerateOwnTeamMembersIncludingSelf_shouldPopulateCorrectly() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.OWN_TEAM_MEMBERS_INCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(Arrays.asList(
+                "student1 In Course1</td></div>'\"",
                 "student2 In Course1",
                 "student3 In Course1",
-                "student4 In Course1"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+                "student4 In Course1"), 
+                getGeneratedChoices(fqaStudent));
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.OWN_TEAM_MEMBERS_INCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Instructor (Has no team, should be empty)
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.OWN_TEAM_MEMBERS_INCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(new ArrayList<>(), getGeneratedChoices(fqaInstructor));
+    }
 
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(new ArrayList<>(), ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+    @Test
+    public void testPopulateFields_mcqGenerateOwnTeamMembersExcludingSelf_shouldPopulateCorrectly() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
 
-        // TEAM MEMBERS EXCLUDING SELF
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.OWN_TEAM_MEMBERS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(Arrays.asList("student2 In Course1",
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.OWN_TEAM_MEMBERS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(Arrays.asList(
+                "student2 In Course1",
                 "student3 In Course1",
-                "student4 In Course1"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+                "student4 In Course1"), 
+                getGeneratedChoices(fqaStudent));
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.OWN_TEAM_MEMBERS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Instructor
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.OWN_TEAM_MEMBERS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(new ArrayList<>(), getGeneratedChoices(fqaInstructor));
+    }
 
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(new ArrayList<>(), ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+    @Test
+    public void testPopulateFields_mcqGenerateTeams_shouldPopulateAllTeams() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+        List<String> expected = Arrays.asList("Team 1.1</td></div>'\"", "Team 1.2");
 
-        // TEAMS
-        expected = Arrays.asList("Team 1.1</td></div>'\"", "Team 1.2");
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.TEAMS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(expected, getGeneratedChoices(fqaStudent));
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Instructor
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.TEAMS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(expected, getGeneratedChoices(fqaInstructor));
+    }
 
+    @Test
+    public void testPopulateFields_mcqGenerateTeamsInSameSection_shouldPopulateCorrectly() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        List<String> expected = Arrays.asList("Team 1.1</td></div>'\"");
+
+        // Test Student Only
+        FeedbackQuestionAttributes fqa = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.TEAMS_IN_SAME_SECTION, new ArrayList<>());
         fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+        assertEquals(expected, getGeneratedChoices(fqa));
+    }
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+    @Test
+    public void testPopulateFields_mcqGenerateTeamsExcludingSelf_shouldFilterOutUsersTeam() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
 
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+        // Test Student (Self team excluded)
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.TEAMS_EXCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(Arrays.asList("Team 1.2"), getGeneratedChoices(fqaStudent));
 
-        // TEAMS_IN_SAME_SECTION
-        expected = Arrays.asList("Team 1.1</td></div>'\"");
+        // Test Instructor (Instructor has no team, all included)
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.TEAMS_EXCLUDING_SELF, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(Arrays.asList("Team 1.1</td></div>'\"", "Team 1.2"), getGeneratedChoices(fqaInstructor));
+    }
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS_IN_SAME_SECTION);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        // TEAMS_EXCLUDING_SELF
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS_EXCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(Arrays.asList("Team 1.2"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS_EXCLUDING_SELF);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(Arrays.asList("Team 1.1</td></div>'\"", "Team 1.2"),
-                ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        // INSTRUCTORS
-        expected = Arrays.asList("Helper Course1",
+    @Test
+    public void testPopulateFields_mcqGenerateInstructors_shouldPopulateCorrectly() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        InstructorAttributes typicalInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+        List<String> expected = Arrays.asList(
+                "Helper Course1",
                 "Instructor Not Yet Joined Course 1",
                 "Instructor1 Course1",
                 "Instructor2 Course1",
                 "Instructor3 Course1");
 
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.INSTRUCTORS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
+        // Test Student
+        FeedbackQuestionAttributes fqaStudent = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.INSTRUCTORS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaStudent, typicalStudent.getEmail(), typicalStudent.getTeam());
+        assertEquals(expected, getGeneratedChoices(fqaStudent));
 
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
-
-        feedbackMcqQuestionDetails.setMcqChoices(new ArrayList<>());
-        feedbackMcqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.INSTRUCTORS);
-        fqa.setQuestionDetails(feedbackMcqQuestionDetails);
-
-        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalInstructor.getEmail(), null);
-        assertEquals(expected, ((FeedbackMcqQuestionDetails) fqa.getQuestionDetailsCopy()).getMcqChoices());
+        // Test Instructor
+        FeedbackQuestionAttributes fqaInstructor = createMcqQuestionWithGenerateOptions(FeedbackParticipantType.INSTRUCTORS, new ArrayList<>());
+        fqLogic.populateFieldsToGenerateInQuestion(fqaInstructor, typicalInstructor.getEmail(), null);
+        assertEquals(expected, getGeneratedChoices(fqaInstructor));
     }
 
     @Test
