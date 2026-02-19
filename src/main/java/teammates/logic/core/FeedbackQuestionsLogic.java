@@ -303,10 +303,16 @@ public final class FeedbackQuestionsLogic {
         String giverTeam = "";
         String giverSection = "";
         if (isStudentGiver) {
+
+            Manual_getRecipientsOfQuestion_BranchCoverage.mark(1);
+
             giverEmail = studentGiver.getEmail();
             giverTeam = studentGiver.getTeam();
             giverSection = studentGiver.getSection();
         } else if (isInstructorGiver) {
+
+            Manual_getRecipientsOfQuestion_BranchCoverage.mark(2);
+
             giverEmail = instructorGiver.getEmail();
             giverTeam = Const.USER_TEAM_FOR_INSTRUCTOR;
             giverSection = Const.DEFAULT_SECTION;
@@ -318,9 +324,15 @@ public final class FeedbackQuestionsLogic {
         switch (recipientType) {
         case SELF:
             if (question.getGiverType() == FeedbackParticipantType.TEAMS) {
+                
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(3);
+
                 recipients.put(giverTeam,
                        new FeedbackQuestionRecipient(giverTeam, giverTeam));
             } else {
+
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(4);
+                
                 recipients.put(giverEmail,
                         new FeedbackQuestionRecipient(USER_NAME_FOR_SELF, giverEmail));
             }
@@ -330,32 +342,46 @@ public final class FeedbackQuestionsLogic {
         case STUDENTS_IN_SAME_SECTION:
             List<StudentAttributes> studentList;
             if (courseRoster == null) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(5);
                 if (generateOptionsFor == FeedbackParticipantType.STUDENTS_IN_SAME_SECTION) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(6);
                     studentList = studentsLogic.getStudentsForSection(giverSection, question.getCourseId());
                 } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(7);
                     studentList = studentsLogic.getStudentsForCourse(question.getCourseId());
                 }
             } else {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(8);
                 if (generateOptionsFor == FeedbackParticipantType.STUDENTS_IN_SAME_SECTION) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(9);
                     final String finalGiverSection = giverSection;
                     studentList = courseRoster.getStudents().stream()
                             .filter(studentAttributes -> studentAttributes.getSection()
                                     .equals(finalGiverSection)).collect(Collectors.toList());
                 } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(10);
                     studentList = courseRoster.getStudents();
                 }
             }
             for (StudentAttributes student : studentList) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(11);
+
                 if (isInstructorGiver && !instructorGiver.isAllowedForPrivilege(
                         student.getSection(), question.getFeedbackSessionName(),
                         Const.InstructorPermissions.CAN_SUBMIT_SESSION_IN_SECTIONS)) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(12);
                     // instructor can only see students in allowed sections for him/her
                     continue;
+                } else{
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(13);
                 }
                 // Ensure student does not evaluate him/herself if it's STUDENTS_EXCLUDING_SELF or
                 // STUDENTS_IN_SAME_SECTION
                 if (giverEmail.equals(student.getEmail()) && generateOptionsFor != FeedbackParticipantType.STUDENTS) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(14);
                     continue;
+                } else{
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(15);
                 }
                 recipients.put(student.getEmail(), new FeedbackQuestionRecipient(student.getName(), student.getEmail(),
                         student.getSection(), student.getTeam()));
@@ -364,19 +390,28 @@ public final class FeedbackQuestionsLogic {
         case INSTRUCTORS:
             List<InstructorAttributes> instructorsInCourse;
             if (courseRoster == null) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(16);
                 instructorsInCourse = instructorsLogic.getInstructorsForCourse(question.getCourseId());
             } else {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(17);
                 instructorsInCourse = courseRoster.getInstructors();
             }
             for (InstructorAttributes instr : instructorsInCourse) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(18);
                 // remove hidden instructors for students
                 if (isStudentGiver && !instr.isDisplayedToStudents()) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(19);
                     continue;
+                } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(20);
                 }
                 // Ensure instructor does not evaluate himself
                 if (!giverEmail.equals(instr.getEmail())) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(21);
                     recipients.put(instr.getEmail(),
                             new FeedbackQuestionRecipient(instr.getName(), instr.getEmail()));
+                } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(22);
                 }
             }
             break;
@@ -386,71 +421,95 @@ public final class FeedbackQuestionsLogic {
             Map<String, List<StudentAttributes>> teamToTeamMembersTable;
             List<StudentAttributes> teamStudents;
             if (courseRoster == null) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(23);
                 if (generateOptionsFor == FeedbackParticipantType.TEAMS_IN_SAME_SECTION) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(24);
                     teamStudents = studentsLogic.getStudentsForSection(giverSection, question.getCourseId());
                 } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(25);
                     teamStudents = studentsLogic.getStudentsForCourse(question.getCourseId());
                 }
                 teamToTeamMembersTable = CourseRoster.buildTeamToMembersTable(teamStudents);
             } else {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(26);
                 if (generateOptionsFor == FeedbackParticipantType.TEAMS_IN_SAME_SECTION) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(27);
                     final String finalGiverSection = giverSection;
                     teamStudents = courseRoster.getStudents().stream()
                             .filter(student -> student.getSection().equals(finalGiverSection))
                             .collect(Collectors.toList());
                     teamToTeamMembersTable = CourseRoster.buildTeamToMembersTable(teamStudents);
                 } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(28);
                     teamToTeamMembersTable = courseRoster.getTeamToMembersTable();
                 }
             }
             for (Map.Entry<String, List<StudentAttributes>> team : teamToTeamMembersTable.entrySet()) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(29);
                 if (isInstructorGiver && !instructorGiver.isAllowedForPrivilege(
                         team.getValue().iterator().next().getSection(),
                         question.getFeedbackSessionName(),
                         Const.InstructorPermissions.CAN_SUBMIT_SESSION_IN_SECTIONS)) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(30);
                     // instructor can only see teams in allowed sections for him/her
                     continue;
+                } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(31);
                 }
                 // Ensure student('s team) does not evaluate own team if it's TEAMS_EXCLUDING_SELF or
                 // TEAMS_IN_SAME_SECTION
                 if (giverTeam.equals(team.getKey()) && generateOptionsFor != FeedbackParticipantType.TEAMS) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(32);
                     continue;
+                } else {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(33);
                 }
                 // recipientEmail doubles as team name in this case.
                 recipients.put(team.getKey(), new FeedbackQuestionRecipient(team.getKey(), team.getKey()));
             }
             break;
         case OWN_TEAM:
+            Manual_getRecipientsOfQuestion_BranchCoverage.mark(34);
             recipients.put(giverTeam, new FeedbackQuestionRecipient(giverTeam, giverTeam));
             break;
         case OWN_TEAM_MEMBERS:
             List<StudentAttributes> students;
             if (courseRoster == null) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(35);
                 students = studentsLogic.getStudentsForTeam(giverTeam, question.getCourseId());
             } else {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(36);
                 students = courseRoster.getTeamToMembersTable().getOrDefault(giverTeam, Collections.emptyList());
             }
             for (StudentAttributes student : students) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(37);
                 if (!student.getEmail().equals(giverEmail)) {
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(38);
                     recipients.put(student.getEmail(), new FeedbackQuestionRecipient(student.getName(), student.getEmail(),
                             student.getSection(), student.getTeam()));
+                } else{
+                    Manual_getRecipientsOfQuestion_BranchCoverage.mark(39);
                 }
             }
             break;
         case OWN_TEAM_MEMBERS_INCLUDING_SELF:
             List<StudentAttributes> teamMembers;
             if (courseRoster == null) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(40);
                 teamMembers = studentsLogic.getStudentsForTeam(giverTeam, question.getCourseId());
             } else {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(41);
                 teamMembers = courseRoster.getTeamToMembersTable().getOrDefault(giverTeam, Collections.emptyList());
             }
             for (StudentAttributes student : teamMembers) {
+                Manual_getRecipientsOfQuestion_BranchCoverage.mark(42);
                 // accepts self feedback too
                 recipients.put(student.getEmail(), new FeedbackQuestionRecipient(student.getName(), student.getEmail(),
                         student.getSection(), student.getTeam()));
             }
             break;
         case NONE:
+            Manual_getRecipientsOfQuestion_BranchCoverage.mark(43);
             recipients.put(Const.GENERAL_QUESTION,
                     new FeedbackQuestionRecipient(Const.GENERAL_QUESTION, Const.GENERAL_QUESTION));
             break;
@@ -719,41 +778,6 @@ public final class FeedbackQuestionsLogic {
         }
     }
 
-    private static final class Manual_populateFieldsToGenerateInQuestion_BranchCoverage {
-        private static final Logger log = Logger.getLogger();
-        private static final int TOTAL_BRANCHES = 29;
-        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
-
-        private static void mark(int branchId) {
-            COVERED[branchId] = true;
-        }
-
-        private static void printSummary() {
-            int coveredCount = 0;
-            StringBuilder coveredBranchIds = new StringBuilder();
-            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
-                if (!COVERED[i]) {
-                    continue;
-                }
-                coveredCount++;
-                if (coveredBranchIds.length() > 0) {
-                    coveredBranchIds.append(", ");
-                }
-                coveredBranchIds.append(i);
-            }
-
-            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
-            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
-            log.info("DIY coverage: "
-                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
-                    + "Covered IDs: [" + coveredBranchIds + "]");
-        }
-    }
-
-    public static void printManual_populateFieldsToGenerateInQuestion_CoverageReport() {
-        Manual_populateFieldsToGenerateInQuestion_BranchCoverage.printSummary();
-    }
-
     /**
      * Updates a feedback question by {@code FeedbackQuestionAttributes.UpdateOptions}.
      *
@@ -881,6 +905,76 @@ public final class FeedbackQuestionsLogic {
                 }
             }
         }
+    }
+
+    private static final class Manual_getRecipientsOfQuestion_BranchCoverage {
+        private static final Logger log = Logger.getLogger();
+        private static final int TOTAL_BRANCHES = 43;
+        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
+
+        private static synchronized void mark(int branchId) {
+            COVERED[branchId] = true;
+        }
+
+        private static synchronized void printSummary() {
+            int coveredCount = 0;
+            StringBuilder coveredBranchIds = new StringBuilder();
+            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
+                if (!COVERED[i]) {
+                    continue;
+                }
+                coveredCount++;
+                if (coveredBranchIds.length() > 0) {
+                    coveredBranchIds.append(", ");
+                }
+                coveredBranchIds.append(i);
+            }
+
+            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+            log.info("DIY coverage: "
+                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
+                    + "Covered IDs: [" + coveredBranchIds + "]");
+        }
+    }
+
+    public static void printManual_getRecipientsOfQuestion_CoverageReport() {
+        Manual_getRecipientsOfQuestion_BranchCoverage.printSummary();
+    }
+
+    private static final class Manual_populateFieldsToGenerateInQuestion_BranchCoverage {
+        private static final Logger log = Logger.getLogger();
+        private static final int TOTAL_BRANCHES = 29;
+        private static final boolean[] COVERED = new boolean[TOTAL_BRANCHES + 1];
+
+        private static void mark(int branchId) {
+            COVERED[branchId] = true;
+        }
+
+        private static void printSummary() {
+            int coveredCount = 0;
+            StringBuilder coveredBranchIds = new StringBuilder();
+            for (int i = 1; i <= TOTAL_BRANCHES; i++) {
+                if (!COVERED[i]) {
+                    continue;
+                }
+                coveredCount++;
+                if (coveredBranchIds.length() > 0) {
+                    coveredBranchIds.append(", ");
+                }
+                coveredBranchIds.append(i);
+            }
+
+            double percentage = coveredCount * 100.0 / TOTAL_BRANCHES;
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+            log.info("DIY coverage: "
+                    + coveredCount + "/" + TOTAL_BRANCHES + " branches (" + roundedPercentage + "%). "
+                    + "Covered IDs: [" + coveredBranchIds + "]");
+        }
+    }
+
+    public static void printManual_populateFieldsToGenerateInQuestion_CoverageReport() {
+        Manual_populateFieldsToGenerateInQuestion_BranchCoverage.printSummary();
     }
 
 }
