@@ -20,6 +20,7 @@ public class LocalLoggingServiceTest extends BaseTestCase {
         llogService.createFeedbackSessionLog("dd2480", "teacher@kth.se", "test", "test");
         long currentTimestamp = Instant.now().toEpochMilli();
         QueryLogsParams params = QueryLogsParams.builder(0, currentTimestamp)
+                .withActionClass("")
                 .build();
         QueryLogsResults res = llogService.queryLogs(params);
 
