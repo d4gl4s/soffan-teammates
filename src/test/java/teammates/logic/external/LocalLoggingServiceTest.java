@@ -16,14 +16,46 @@ public class LocalLoggingServiceTest extends BaseTestCase {
     private final LocalLoggingService llogService = new LocalLoggingService();
 
     @Test
-    public void testDefaultLogsHaveNextPage() {
-        llogService.createFeedbackSessionLog("dd2480", "teacher@kth.se", "test", "test");
+    public void testDefaultLogsContainStatus200() {
         long currentTimestamp = Instant.now().toEpochMilli();
         QueryLogsParams params = QueryLogsParams.builder(0, currentTimestamp)
-                .withActionClass("")
+                .withStatus("200")
                 .build();
         QueryLogsResults res = llogService.queryLogs(params);
 
-        assertTrue(res.getHasNextPage());
+        assertFalse(res.getLogEntries().isEmpty());
+    }
+
+    @Test
+    public void testDefaultLogsContainQueryLogsAction() {
+        long currentTimestamp = Instant.now().toEpochMilli();
+        QueryLogsParams params = QueryLogsParams.builder(0, currentTimestamp)
+                .withActionClass("QueryLogsAction")
+                .build();
+        QueryLogsResults res = llogService.queryLogs(params);
+
+        assertFalse(res.getLogEntries().isEmpty());
+    }
+
+    @Test
+    public void testDefaultLogsContainAboveZeroLatency() {
+        long currentTimestamp = Instant.now().toEpochMilli();
+        QueryLogsParams params = QueryLogsParams.builder(0, currentTimestamp)
+                .withLatency(">0")
+                .build();
+        QueryLogsResults res = llogService.queryLogs(params);
+
+        assertFalse(res.getLogEntries().isEmpty());
+    }
+
+    @Test
+    public void testDefaultLogsDoesNotContainNegativeLatency() {
+        long currentTimestamp = Instant.now().toEpochMilli();
+        QueryLogsParams params = QueryLogsParams.builder(0, currentTimestamp)
+                .withLatency("<0")
+                .build();
+        QueryLogsResults res = llogService.queryLogs(params);
+
+        assertTrue(res.getLogEntries().isEmpty());
     }
 }
