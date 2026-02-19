@@ -207,28 +207,30 @@ public class LocalLoggingService implements LogService {
                     assert false : "Unreachable case";
                     break;
                 }
+            } else {
+                ManualBranchCoverage.mark(16);
             }
             if (!isFilterSatisfied) {
-                ManualBranchCoverage.mark(16);
+                ManualBranchCoverage.mark(17);
                 return false;
             } else {
-                ManualBranchCoverage.mark(17);
+                ManualBranchCoverage.mark(18);
             }
         } else {
-            ManualBranchCoverage.mark(18);
+            ManualBranchCoverage.mark(19);
         }
         RequestLogUser userInfo = requestDetails.getUserInfo();
         if (regkeyFilter != null && (userInfo == null || !regkeyFilter.equals(userInfo.getRegkey()))) {
-            ManualBranchCoverage.mark(19);
+            ManualBranchCoverage.mark(20);
             return false;
         } else {
-            ManualBranchCoverage.mark(20);
+            ManualBranchCoverage.mark(21);
         }
         if (emailFilter != null && (userInfo == null || !emailFilter.equals(userInfo.getEmail()))) {
-            ManualBranchCoverage.mark(21);
+            ManualBranchCoverage.mark(22);
             return false;
         } else {
-            ManualBranchCoverage.mark(22);
+            ManualBranchCoverage.mark(23);
         }
         return googleIdFilter == null || userInfo != null && googleIdFilter.equals(userInfo.getGoogleId());
     }
