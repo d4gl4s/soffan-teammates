@@ -824,6 +824,45 @@ public class FeedbackQuestionsLogicTest extends BaseLogicTest {
     }
 
     @Test
+    public void testPopulateFieldsToGenerateInQuestion_otherQuestionType_doesNothing() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        FeedbackQuestionAttributes fqa = dataBundle.feedbackQuestions.get("qn1InSession1InCourse1");
+        
+        // Set the question details to something other than MCQ or MSQ
+        FeedbackTextQuestionDetails textDetails = new FeedbackTextQuestionDetails(); 
+        fqa.setQuestionDetails(textDetails);
+
+        // Act
+        fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
+
+        // Assert
+        // Since the method hits the 'else' and returns immediately,
+        // we just assert that the details object hasn't been altered or replaced
+        assertEquals(textDetails, fqa.getQuestionDetailsCopy());
+    }
+
+    @Test
+    public void testPopulateFieldsToGenerateInQuestion_invalidGenerateOptionsFor_throwsAssertionError() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        FeedbackQuestionAttributes fqa = dataBundle.feedbackQuestions.get("qn1InSession1InCourse1");
+        
+        FeedbackMsqQuestionDetails feedbackMsqQuestionDetails = new FeedbackMsqQuestionDetails();
+        
+        // Set to a FeedbackParticipantType that is NOT covered by the switch cases
+        feedbackMsqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.RECEIVER); 
+        fqa.setQuestionDetails(feedbackMsqQuestionDetails);
+
+        // Act & Assert
+        // We expect the 'assert false' to throw an AssertionError
+        AssertionError error = assertThrows(AssertionError.class, () -> {
+            fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
+        });
+        
+        // Verify the assertion message matches what's in the code
+        assertTrue(error.getMessage().contains("Trying to generate options for neither students, teams nor instructors"));
+    }
+
+    @Test
     public void testBuildCompleteGiverRecipientMap_studentQuestion_shouldBuildMapCorrectly() {
         CourseRoster courseRoster = new CourseRoster(
                 studentsLogic.getStudentsForCourse("idOfTypicalCourse1"),
