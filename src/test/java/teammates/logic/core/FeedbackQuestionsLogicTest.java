@@ -863,6 +863,26 @@ public class FeedbackQuestionsLogicTest extends BaseLogicTest {
     }
 
     @Test
+    public void testPopulateFieldsToGenerateInQuestion_courseDisappearedForTeams_throwsAssertionError() {
+        StudentAttributes typicalStudent = dataBundle.students.get("student1InCourse1");
+        FeedbackQuestionAttributes fqa = dataBundle.feedbackQuestions.get("qn1InSession1InCourse1");
+        
+        FeedbackMsqQuestionDetails feedbackMsqQuestionDetails = new FeedbackMsqQuestionDetails();
+        feedbackMsqQuestionDetails.setGenerateOptionsFor(FeedbackParticipantType.TEAMS); 
+        
+        // Set a fake course ID to trigger the EntityDoesNotExistException
+        fqa.setCourseId("nonExistentCourseId_12345");
+        fqa.setQuestionDetails(feedbackMsqQuestionDetails);
+
+        // Act & Assert
+        AssertionError error = assertThrows(AssertionError.class, () -> {
+            fqLogic.populateFieldsToGenerateInQuestion(fqa, typicalStudent.getEmail(), typicalStudent.getTeam());
+        });
+        
+        assertTrue(error.getMessage().contains("Course disappeared"));
+    }
+
+    @Test
     public void testBuildCompleteGiverRecipientMap_studentQuestion_shouldBuildMapCorrectly() {
         CourseRoster courseRoster = new CourseRoster(
                 studentsLogic.getStudentsForCourse("idOfTypicalCourse1"),
