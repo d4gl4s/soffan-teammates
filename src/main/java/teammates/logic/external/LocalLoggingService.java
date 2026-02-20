@@ -147,6 +147,39 @@ public class LocalLoggingService implements LogService {
         return exceptionDetails.getExceptionClass().equals(exceptionClassFilter);
     }
 
+    private boolean isLogDetailFilterSatisfied(String actionClassFilter, String statusFilter,
+            String latencyFilter, RequestLogDetails requestDetails) {
+        if (actionClassFilter != null && !actionClassFilter.equals(requestDetails.getActionClass())) {
+            return false;
+        }
+        if (statusFilter != null && !statusFilter.equals(String.valueOf(requestDetails.getResponseStatus()))) {
+            return false;
+        }
+        if (latencyFilter == null) {
+            return true;
+        }
+        Pattern p = Pattern.compile("^(>|>=|<|<=) *(\\d+)$");
+        Matcher m = p.matcher(latencyFilter);
+        long logLatency = requestDetails.getResponseTime();
+        if (m.matches()) {
+            int time = Integer.parseInt(m.group(2));
+            switch (m.group(1)) {
+            case ">":
+                return logLatency > time;
+            case ">=":
+                return logLatency >= time;
+            case "<":
+                return logLatency < time;
+            case "<=":
+                return logLatency <= time;
+            default:
+                assert false : "Unreachable case";
+                break;
+            }
+        }
+        return false;
+    }
+
     private boolean isRequestFilterSatisfied(LogDetails details, String actionClassFilter,
             String latencyFilter, String statusFilter, String regkeyFilter, String emailFilter, String googleIdFilter) {
         if (actionClassFilter == null && latencyFilter == null && statusFilter == null
@@ -157,40 +190,8 @@ public class LocalLoggingService implements LogService {
             return false;
         }
         RequestLogDetails requestDetails = (RequestLogDetails) details;
-        if (actionClassFilter != null && !actionClassFilter.equals(requestDetails.getActionClass())) {
+        if (!isLogDetailFilterSatisfied(actionClassFilter, statusFilter, latencyFilter, requestDetails)) {
             return false;
-        }
-        if (statusFilter != null && !statusFilter.equals(String.valueOf(requestDetails.getResponseStatus()))) {
-            return false;
-        }
-        if (latencyFilter != null) {
-            Pattern p = Pattern.compile("^(>|>=|<|<=) *(\\d+)$");
-            Matcher m = p.matcher(latencyFilter);
-            long logLatency = ((RequestLogDetails) details).getResponseTime();
-            boolean isFilterSatisfied = false;
-            if (m.matches()) {
-                int time = Integer.parseInt(m.group(2));
-                switch (m.group(1)) {
-                case ">":
-                    isFilterSatisfied = logLatency > time;
-                    break;
-                case ">=":
-                    isFilterSatisfied = logLatency >= time;
-                    break;
-                case "<":
-                    isFilterSatisfied = logLatency < time;
-                    break;
-                case "<=":
-                    isFilterSatisfied = logLatency <= time;
-                    break;
-                default:
-                    assert false : "Unreachable case";
-                    break;
-                }
-            }
-            if (!isFilterSatisfied) {
-                return false;
-            }
         }
         RequestLogUser userInfo = requestDetails.getUserInfo();
         if (regkeyFilter != null && (userInfo == null || !regkeyFilter.equals(userInfo.getRegkey()))) {
