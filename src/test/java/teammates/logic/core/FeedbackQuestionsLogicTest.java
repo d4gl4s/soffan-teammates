@@ -1,5 +1,10 @@
 package teammates.logic.core;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -210,6 +215,61 @@ public class FeedbackQuestionsLogicTest extends BaseLogicTest {
         assertEquals(recipients.get(studentGiver.getEmail()).getName(), FeedbackQuestionsLogic.USER_NAME_FOR_SELF);
         assertEquals(recipients.size(), 1);
     }
+
+        @Test
+        public void testGetRecipientsOfQuestion_instructorWithoutPrivilege_studentsCase() {
+                ______TS("instructor without privilege should see no students");
+
+                FeedbackQuestionAttributes question = getQuestionFromDatabase("qn2InSession1InCourse1");
+
+                InstructorAttributes realInstructor = dataBundle.instructors.get("instructor1OfCourse1");
+
+                // Create mock instructor
+                InstructorAttributes instructorGiver = spy(realInstructor);
+
+                // Force privilege check to fail 
+                doReturn(false).when(instructorGiver).isAllowedForPrivilege(
+                        anyString(),
+                        anyString(),
+                        any());
+
+                CourseRoster courseRoster = new CourseRoster(
+                        studentsLogic.getStudentsForCourse(realInstructor.getCourseId()),
+                        instructorsLogic.getInstructorsForCourse(realInstructor.getCourseId()));
+
+                Map<String, FeedbackQuestionRecipient> recipients = fqLogic.getRecipientsOfQuestion(question, instructorGiver, null, courseRoster);
+
+                // All students filtered out
+                assertEquals(0, recipients.size());
+        }
+
+        @Test
+        public void testGetRecipientsOfQuestion_instructorWithoutPrivilege_teamsCase() {
+                ______TS("instructor without privilege should see no teams");
+
+                FeedbackQuestionAttributes question =
+                        getQuestionFromDatabase("team.instructor.feedback");
+
+                InstructorAttributes realInstructor =
+                        dataBundle.instructors.get("instructor1OfCourse1");
+
+                InstructorAttributes instructorGiver = spy(realInstructor);
+
+                // Force privilege check to fail 
+                doReturn(false).when(instructorGiver).isAllowedForPrivilege(
+                        anyString(),
+                        anyString(),
+                        any());
+
+                CourseRoster courseRoster = new CourseRoster(
+                        studentsLogic.getStudentsForCourse(realInstructor.getCourseId()),
+                        instructorsLogic.getInstructorsForCourse(realInstructor.getCourseId()));
+
+                Map<String, FeedbackQuestionRecipient> recipients =
+                        fqLogic.getRecipientsOfQuestion(question, instructorGiver, null, courseRoster);
+
+                assertEquals(0, recipients.size());
+        }
 
     @Test
     public void testUpdateQuestionCascade_shouldShiftQuestionNumberCorrectly() throws Exception {
